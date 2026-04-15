@@ -22,7 +22,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "change-me-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week
 
-ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,https://codesnap-frontend-jet.vercel.app").split(",")
 
 # ─── App ─────────────────────────────────────────────────────────────────────
 
