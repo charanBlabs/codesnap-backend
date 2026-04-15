@@ -36,7 +36,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
 # ─── DB Pool ─────────────────────────────────────────────────────────────────
 
@@ -141,6 +141,23 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_d
         raise credentials_exception
     return dict(user)
 
+async def get_optional_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)):
+    """Get current user if token is provided, otherwise return None (public access)"""
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+    except jwt.PyJWTError:
+        return None
+
+    user = await db.fetchrow("SELECT * FROM users WHERE id = $1", user_id)
+    if user is None:
+        return None
+    return dict(user)
+
 async def require_admin(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
@@ -181,7 +198,7 @@ async def list_snippets(
     limit: int = 50,
     offset: int = 0,
     db=Depends(get_db),
-    current_user: dict = Depends(get_current_user)
+    current_user: Optional[dict] = Depends(get_optional_user)
 ):
     query = """
         SELECT 
@@ -224,7 +241,7 @@ async def list_snippets(
     ]
 
 @app.get("/api/snippets/{snippet_id}", response_model=SnippetOut)
-async def get_snippet(snippet_id: str, db=Depends(get_db), current_user: dict = Depends(get_current_user)):
+async def get_snippet(snippet_id: str, db=Depends(get_db), current_user: Optional[dict] = Depends(get_optional_user)):
     row = await db.fetchrow("""
         SELECT s.*, cu.name as created_by_name, uu.name as updated_by_name
         FROM snippets s
@@ -280,7 +297,7 @@ async def delete_snippet(snippet_id: str, db=Depends(get_db), current_user: dict
 # ─── Tag Routes ───────────────────────────────────────────────────────────────
 
 @app.get("/api/tags", response_model=List[TagOut])
-async def list_tags(db=Depends(get_db), current_user: dict = Depends(get_current_user)):
+async def list_tags(db=Depends(get_db), current_user: Optional[dict] = Depends(get_optional_user)):
     rows = await db.fetch("SELECT * FROM tags ORDER BY name")
     return [{"id": str(r["id"]), "name": r["name"], "color": r["color"]} for r in rows]
 
