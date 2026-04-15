@@ -49,12 +49,12 @@ async def seed():
         sys.exit(1)
 
     # Find the Excel file
-    excel_path = Path(__file__).parent.parent.parent / "Codes_Backup__1_.xlsx"
+    excel_path = Path(__file__).parent / "Codes Backup.xlsx"
     if not excel_path.exists():
         # Try current directory
-        excel_path = Path("Codes_Backup__1_.xlsx")
+        excel_path = Path("Codes Backup.xlsx")
     if not excel_path.exists():
-        print(f"ERROR: Cannot find Codes_Backup__1_.xlsx")
+        print(f"ERROR: Cannot find Codes Backup.xlsx")
         print("Place the Excel file next to this script or in the project root.")
         sys.exit(1)
 
@@ -94,10 +94,10 @@ async def seed():
             ON CONFLICT DO NOTHING
         """, title, description, code, language, tags, working_pages, admin_id)
         count += 1
-        print(f"  ✓ [{language}] {title[:60]}")
+        print(f"  [{language}] {title[:60]}")
 
     await conn.close()
-    print(f"\n✅ Seeded {count} snippets successfully!")
+    print(f"\nSeeded {count} snippets successfully!")
 
 if __name__ == "__main__":
     asyncio.run(seed())
